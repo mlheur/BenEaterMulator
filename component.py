@@ -11,63 +11,62 @@ from bus import Bus
 
 # exports
 class Component(object):
-    def __init__(self, outbus, inbus=None):
-        if outbus is None or isinstance(outbus, Bus):
-            self.output = outbus
-        else:
-            raise RuntimeError("output bus is not a bus")
-        self.inputs = []
-        if inbus is not None:
-            if type(inbus) == type([]):
-                for i in inbus:
-                    self.inputs.append(i)
-            elif isinstance(inbus, Bus):
-                self.inputs.append(inbus)
+    def __init__(self, ibus, obus, ienable, oenable):
+        self.ibus = ibus
+        self.obus = obus
+        self.ienable = ienable
+        self.oenable = oenable
         self.state = False
 
-    def clock_rise(self):
-        n = len(self.inputs)
-        if n == 0:
-            self.state = False
-            return
-        if n > 1:
-            self.state = []
-            for i in self.inputs:
-                self.state.append(i.sense())
-            return
-        self.state = self.inputs[0].sense()
-
-    def clock_high(self):
-        pass
-
-    def clock_fall(self):
-        if type(self.state) == type([]):
-            if len(self.state) > 1:
-                raise RuntimeError("multiple inputs, must override Component.clock_fall()")
-            self.output.signal(self.state[0])
-            return()
-        self.output.signal(self.state)
-
-    def clock_low(self):
-        pass
-
     def __str__(self):
-        return("state [{}], output [{}], inputs [{}]".format(self.state, self.output, self.inputs))
+        return("state=[{}],ibus=[{}],obus=[{}],ienable=[{}],oenable=[{}]".format(
+            self.state,
+            self.ibus,
+            self.obus,
+            self.ienable,
+            self.oenable))
+
+    def pulse(self):
+        if self.ienable:
+             self.state = self.ibus.read()
+        if self.oenable:
+             self.obus.write(self.state)
+
+    def input_enable(self,enable=True):
+        self.ienable=enable
+
+    def input_disable(self,enable=False):
+        self.input_enable(enable)
+
+    def output_enable(self,enable=True):
+        self.oenable=enable
+
+    def output_disable(self,enable=False):
+        self.output_enable(enable)
 
 # main
 if __name__ == "__main__":
     from sys import path as pylib
-    mycomponent = Component(Bus(),Bus())
-    print("1. mycomponent [{}]".format(mycomponent))
-    mycomponent.clock_rise()
-    print("2. mycomponent [{}]".format(mycomponent))
-    mycomponent.clock_fall()
-    print("3. mycomponent [{}]".format(mycomponent))
-    mycomponent = Component(Bus(),[Bus(),Bus()])
-    print("4. mycomponent [{}]".format(mycomponent))
-    mycomponent.clock_rise()
-    print("5. mycomponent [{}]".format(mycomponent))
-    mycomponent.clock_fall()
-    print("6. mycomponent [{}]".format(mycomponent))
     print(pylib)
+    thebus = Bus()
+    thecomp = Component(thebus,thebus,False,False)
+    print("1. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thebus.write(True)
+    print("2. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thecomp.input_enable()
+    print("3. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thecomp.output_disable()
+    print("4. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thecomp.pulse()
+    print("5. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thecomp.input_disable()
+    print("6. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thebus.write(False)
+    print("7. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thecomp.pulse()
+    print("8. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thecomp.output_enable()
+    print("9. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
+    thecomp.pulse()
+    print("10. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
     raise RuntimeError("this is meant to be imported")

@@ -13,14 +13,14 @@ class Bus(object):
     def __init__(self):
         self.state = False
 
-    def signal(self,state):
+    def write(self,state):
         self.state = state
 
-    def sense(self):
+    def read(self):
         return(self.state)
 
     def __str__(self):
-        return("sense=[{}]".format(self.sense()))
+        return("state=[{}]".format(self.read()))
 
 # main
 if __name__ == "__main__":
