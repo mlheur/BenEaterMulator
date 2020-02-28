@@ -20,7 +20,7 @@ class Bus(object):
         return(self.state)
 
     def __str__(self):
-        return("state=[{}]".format(self.read()))
+        return("Bus: state=[{}]".format(self.read()))
 
 # main
 if __name__ == "__main__":

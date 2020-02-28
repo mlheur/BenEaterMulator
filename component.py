@@ -19,7 +19,7 @@ class Component(object):
         self.state = False
 
     def __str__(self):
-        return("state=[{}],ibus=[{}],obus=[{}],ienable=[{}],oenable=[{}]".format(
+        return("Component: state=[{}], ibus=[{}], obus=[{}], ienable=[{}], oenable=[{}]".format(
             self.state,
             self.ibus,
             self.obus,
