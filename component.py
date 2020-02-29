@@ -27,45 +27,35 @@ class Component(object):
             self.oenable))
 
     def pulse(self):
-        if self.ienable:
+        if self.ienable.read():
              self.state = self.ibus.read()
-        if self.oenable:
+        if self.oenable.read():
              self.obus.write(self.state)
-
-    def input_enable(self,enable=True):
-        self.ienable=enable
-
-    def input_disable(self,enable=False):
-        self.input_enable(enable)
-
-    def output_enable(self,enable=True):
-        self.oenable=enable
-
-    def output_disable(self,enable=False):
-        self.output_enable(enable)
 
 # main
 if __name__ == "__main__":
     from sys import path as pylib
     print(pylib)
     thebus = Bus()
-    thecomp = Component(thebus,thebus,False,False)
+    ie = Bus()
+    oe = Bus()
+    thecomp = Component(thebus,thebus,ie,oe)
     print("1. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
     thebus.write(True)
     print("2. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
-    thecomp.input_enable()
+    ie.write(True)
     print("3. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
-    thecomp.output_disable()
+    oe.write(False)
     print("4. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
     thecomp.pulse()
     print("5. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
-    thecomp.input_disable()
+    ie.write(False)
     print("6. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
     thebus.write(False)
     print("7. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
     thecomp.pulse()
     print("8. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
-    thecomp.output_enable()
+    oe.write(False)
     print("9. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))
     thecomp.pulse()
     print("10. thebus=[{}],thecomp=[{}]".format(thebus,thecomp))

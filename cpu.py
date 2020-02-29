@@ -16,26 +16,43 @@ from decoder import BenEaterDecoder
 # exports
 class CPU(object):
     def __init__(self):
+
+        def mkreg(name):
+            ie = Bus()
+            oe = Bus()
+            self.control_lines['reg'][name] = {'ie': ie, 'oe': oe}
+            return Component(self.bus, self.bus, ie, oe)
+
         self.control_lines = {}
         self.control_lines['hlt'] = Bus()
+        self.control_lines['reg'] = {}
         self.bus = Bus()
         self.clk = Clock(self.control_lines['hlt'])
         self.components = []
-        a_reg_ie = Bus()
-        self.control_lines['a_reg_ie'] = a_reg_ie
-        self.control_lines['a_reg_oe'] = a_reg_oe
-        self.components.append(Component(self.bus, self.bus, a_reg_ie, a_reg_oe)) # a register
-        self.decoder = BenEaterDecoder()
+        self.components.append(mkreg("A"))
+        self.components.append(mkreg("B"))
+        self.decoder = BenEaterDecoder(self.control_lines, self.bus)
 
-    def poweron(self):
-        while self.clk.getpulse():
-            # fetch
-            # decode
-            # execute
-            for component in self.components:
-                component.pulse()
+    def __str__(self):
+        return("CPU:  A=[{}]   B=[{}]  BUS=[{}]  HLT=[{}]".format(
+            self.components[0].state,
+            self.components[1].state,
+            self.bus.read(),
+            self.control_lines['hlt'].read()
+        ))
+
+    def poweron(self, program=None):
+        if program is None:
+            program = [0]  # halt
+        print("Before Poweron\n{}".format(self))
+        while self.clk.getpulse():  # Wait for clock trigger
+            if len(program):
+                self.decoder.decode(program.pop(0))
+                for component in self.components:
+                    component.pulse()
+                print(self)
 
 # main
 if __name__ == "__main__":
     cpu = CPU()
-    cpu.poweron()
+    cpu.poweron([3,1,4,7,4,5,3,4,2,5,4,6,1,0])

@@ -10,10 +10,10 @@ addsitedir(dirname(realpath(abspath(argv[0]))))
 
 # exports
 class Bus(object):
-    def __init__(self):
-        self.state = False
+    def __init__(self, state=False):
+        self.state = state
 
-    def write(self,state):
+    def write(self, state):
         self.state = state
 
     def read(self):
