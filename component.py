@@ -7,28 +7,36 @@ from site import addsitedir
 
 # local imports
 addsitedir(dirname(realpath(abspath(argv[0]))))
-from bus import Bus
+from bus import InputBus as ib, OutputBus as ob
 
 # exports
 class Component(object):
-    def __init__(self, busses=None, lines=None, state=False ):
-        if busses == None: busses = {}
-        if lines == None: lines = {}
-        self.state = state
-        self.busses = busses
-        self.lines = lines
+    def __init__(self, mainbus):
+        self.ib = ib("ib", mainbus)
+        self.ib.enable()
+        self.ob = ob("ob", mainbus)
+        self.ob.disable()
+
+    def input_enable(enabled=True):
+        self.ib.enable(enabled)
+    def input_disable():
+        self.input_enable(False)
+
+    def output_enable(enabled=True):
+        self.ob.enable(enabled)
+    def output_disable():
+        self.output_enable(False)
 
     def __str__(self):
-        return("Component: state=[{}], busses=[{}], lines=[{}]".format(
-            self.state,
-            self.busses,
-            self.lines))
+        return("Component:[ib:[{}], ob:[{}]]".format(self.ib, self.ob))
 
     def pulse(self,verbose=False):
-        raise RuntimeError("subclass must define pulse()")
+        if verbose: print("PULSE!")
+        self.ob.write(self.ib.read())
 
 # main
 if __name__ == "__main__":
-    c = Component()
+    from bus import MainBus
+    c = Component(MainBus("mainbus", "8 Bit Bus"))
     print(c)
-    raise RuntimeError("this is meant to be imported")
+    c.pulse(True)
