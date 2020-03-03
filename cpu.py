@@ -10,7 +10,7 @@ addsitedir(dirname(realpath(abspath(argv[0]))))
 
 from bus import Bus
 from clock import Clock
-from component import Component
+from register import Register
 from decoder import BenEaterDecoder
 
 # exports
@@ -20,18 +20,15 @@ class CPU(object):
         def mkreg(name):
             ie = Bus()
             oe = Bus()
-            self.control_lines['reg'][name] = {'ie': ie, 'oe': oe}
-            return Component(self.bus, self.bus, ie, oe)
+            return Register({'bus': self.bus}, {'ie': ie, 'oe': oe})}
 
-        self.control_lines = {}
-        self.control_lines['hlt'] = Bus()
-        self.control_lines['reg'] = {}
+        self.hlt = Bus()
         self.bus = Bus()
         self.clk = Clock(self.control_lines['hlt'])
-        self.components = []
-        self.components.append(mkreg("A"))
-        self.components.append(mkreg("B"))
-        self.decoder = BenEaterDecoder(self.control_lines, self.bus)
+        self.components = {}
+        self.A = mkreg("A")
+        self.B = mkreg("B")
+        self.decoder = BenEaterDecoder(self)
 
     def __str__(self):
         return("CPU:  A=[{}]   B=[{}]  BUS=[{}]  HLT=[{}]".format(
@@ -41,18 +38,22 @@ class CPU(object):
             self.control_lines['hlt'].read()
         ))
 
-    def poweron(self, program=None):
+    def poweron(self, program=None, verbose=False):
         if program is None:
             program = [0]  # halt
         print("Before Poweron\n{}".format(self))
-        while self.clk.getpulse():  # Wait for clock trigger
+        while self.clk.getpulse(verbose):  # Wait for clock trigger
             if len(program):
-                self.decoder.decode(program.pop(0))
+                if verbose: print("fetch")
+                instruction = program.pop(0)
+                if verbose: print("decode")
+                self.decoder.decode(instruction, verbose)
+                if verbose: print("execute")
                 for component in self.components:
-                    component.pulse()
-                print(self)
+                    component.pulse(verbose)
+                if verbose: print(self)
 
 # main
 if __name__ == "__main__":
     cpu = CPU()
-    cpu.poweron([3,1,4,7,4,5,3,4,2,5,4,6,1,0])
+    cpu.poweron([3,1,4,7,4,5,3,4,2,5,4,6,1,0],True)
