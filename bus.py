@@ -10,68 +10,96 @@ addsitedir(dirname(realpath(abspath(argv[0]))))
 
 # exports
 class Bus(object):
-    def __init__(self,id):
+    
+    
+    def __init__(self, id, state=None):
         self.id = id
-        self.enabled = True
+        self.bus_write(state)
+    
     def __str__(self):
-        return("Bus:[enabled:{}, id:{}]".format(self.enabled, self.id))
-    def enable(self, enabled=True):
-        self.enabled = enabled
-    def disable(self):
-        self.enable(False)
-    def read(self):
-        if not hasattr(self, 'state'):
-            return None
-        if hasattr(self, 'enabled') and self.enabled:
-            print("{} READ!".format(self.id))
-            return(self.state)
-    def write(self, state):
-        if not hasattr(self, 'state'):
-            return
-        if hasattr(self, 'enabled') and self.enabled:
-            print("{} WROTE! {}".format(self.id, state))
-            self.state = state
-
-class InputBus(Bus):
-    def __init__(self, id, reads_from):
-        super().__init__(id)
-        self.reads_from = reads_from
-    def __str__(self):
-        return("InputBus:[reads_from:[{}], {}]".format(self.reads_from, super().__str__()))
-    def read(self):
-        if hasattr(self, 'enabled') and self.enabled:
-            return self.reads_from.read()
-
-class OutputBus(Bus):
-    def __init__(self, id, writes_to):
-        super().__init__(id)
-        self.writes_to = writes_to
-        self.disable()
-    def __str__(self):
-        return("OutputBus:[writes_to:[{}], {}]".format(self.writes_to, super().__str__()))
-    def write(self, state):
-        if hasattr(self, 'enabled') and self.enabled:
-            self.writes_to.write(state)
-
-class MainBus(Bus):
-    def __init__(self, id, state=False):
-        super().__init__(id)
+        return("{0},{1}".format(self.id, self.state))
+    
+    def bus_read(self, verbose=False):
+        if verbose: print("   [verbose] {0}.bus_read: returning [{1}] state [{2}]".format(type(self).__name__, self.id, self.state))
+        return(self.state)
+    
+    def bus_write(self, state, verbose=False):
+        if verbose: print("   [verbose] {0}.bus_write: changing [{1}] state from [{2}] to [{3}]".format(type(self).__name__, self.id, state, self.state))
         self.state = state
+
+
+class Trace(object):
+
+
+    def __init__(self, id, bus):
+        self.id = id
+        self.busses = bus
+        if type(bus) != type([]):
+            self.busses = [bus]
+
     def __str__(self):
-        return("MainBus:[state:[{}], {}]".format(self.state, super().__str__()))
-        
+        return("{0},{1}".format(self.id, self.busses))
+
+    def trace_read(self, verbose=False):
+        for bus in self.busses:
+            return(bus.bus_read(verbose))
+
+    def trace_write(self, state, verbose=False):
+        for bus in self.busses:
+            bus.bus_write(state, verbose)
+
+    def attach(self, bus, verbose=False):
+        if bus not in self.busses:
+            self.busses.append(bus)
+
+    def detach(self, bus, verbose=False):
+        if bus in self.busses:
+            for i in range(len(self.busses)):
+                if self.busses[i] is bus:
+                    del self.busses[i]
+            
+
+class HiTrace(Trace):
+
+    def trace_read(self, verbose=False):
+        for bus in self.busses:
+            return((bus.bus_read(verbose)&0xF0)>>4)
+
+    def trace_write(self, state, verbose=False):
+        hipart = (state&0x0F) << 4
+        for bus in self.busses:
+            bus.bus_write(hipart|(bus.bus_read(verbose)&0xF), verbose)
+
+class LoTrace(Trace):
+
+    def trace_read(self, verbose=False):
+        for bus in self.busses:
+            return(bus.bus_read(verbose)&0x0F)
+
+    def trace_write(self, state, verbose=False):
+        lopart = state&0x0F
+        for bus in self.busses:
+            bus.bus_write((bus.bus_read(verbose) & 0xF0)|lopart, verbose)
+
 # main
 if __name__ == "__main__":
-    mybus = MainBus("mybus")
-    myin = InputBus("myin", mybus)
-    myout = OutputBus("myout", mybus)
-    print(mybus)
-    print(myin)
-    print(myout)
-    print("myin.read()={}".format(myin.read()))
-    print("writing True to myout")
-    myout.write(True)
-    print(mybus)
-    print("myin.read()={}".format(myin.read()))
+    bus = Bus("the_bus", False)
+    print(bus, bus.bus_read(True))
+    bus.bus_write(True)
+    print(bus, bus.bus_read(True))
 
+    t = Trace("the_trace", bus)
+    t.trace_write(0b10100101, True)
+    print(t, bus, bus.bus_read(True))
+    print("reading from trace: {}".format(t.trace_read()))
 
+    t.trace_write(0b11001010, True)
+    lt = LoTrace("lo_trace", bus)
+    ht = HiTrace("hi_trace", bus)
+    print(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True))
+
+    lt.trace_write(0b0011, True)
+    print(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True))
+
+    ht.trace_write(0b0101, True)
+    print(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True))
