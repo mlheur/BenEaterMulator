@@ -26,16 +26,18 @@ class Register(ToggleGate):
             self.gate_write(self.state, verbose)
 
 class A_Register(Register):
-    def __init__(self, id, bus, alu_a, state=None):
-        super().__init__(id, bus, state)
+    def __init__(self, id, bus, alu_a, state=None, flags={}):
+        super().__init__(id, bus, state, flags)
         self.output.attach(alu_a)
 
 class B_Register(Register):
-    def __init__(self, id, bus, alu_b, state=None):
-        super().__init__(id, bus, state)
+    def __init__(self, id, bus, alu_b, state=None, flags={}):
+        super().__init__(id, bus, state, flags)
         self.output.detach(bus)
         self.output.attach(alu_b)
         self.oe(True)
+    def oe(self, verbose=False):
+        return True
 
 class OUT_Register(Register):
     def __init__(self, id, bus, state=None):
@@ -43,7 +45,25 @@ class OUT_Register(Register):
         self.output.detach(bus)
         del self.output
     def oe(self, verbose=False):
-        pass
+        return False
+
+class INSTR_Register(Register):
+    def __init__(self, id, bus, oprom_bus, state=None, flags={}):
+        super().__init__(id, bus, state, flags)
+        self.output.detach(bus)
+        del self.output
+        self.output = HiLoOutputSplitter(id, bus, oprom_bus, bus, state, flags)
+
+class OPROM_Register(Register):
+    def __init__(self, id, oprom_in, oprom_out, state=None, flags={}):
+        super().__init__(id, oprom_out, decoder_bus, state, flags)
+        self.input.detach(bus)
+        del self.input
+        self.input = HiTrace(id, oprom_bus)
+    def ie(self, verbose=False):
+        return True
+    def oe(self, verbose=False):
+        return True
 
 # main
 if __name__ == "__main__":

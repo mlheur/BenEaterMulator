@@ -8,9 +8,10 @@ from site import addsitedir
 # local imports
 addsitedir(dirname(realpath(abspath(argv[0]))))
 from bus import Trace
+from register import OpenGate
 
 # exports
-class BenEaterDecoder(object):
+class BenEaterDecoder(Register):
 
     def __init__(self, cpu):
         self.cpu = cpu
@@ -83,7 +84,7 @@ class BenEaterDecoder(object):
         if INSTR == 0x7:
             if verbose: print("07: LDI")
             self.cpu.A.ie(True)
-            self.output.write(VALUE)
+            self.output.trace_write(VALUE)
             return
         if INSTR == 0x8:
             if verbose: print("08: JC ")

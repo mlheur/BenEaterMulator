@@ -54,9 +54,9 @@ class Trace(object):
 
     def detach(self, bus, verbose=False):
         if bus in self.busses:
-            for i in range(len(self.busses)):
-                if self.busses[i] is bus:
-                    del self.busses[i]
+            for k, v in enumerate(self.busses):
+                if v is bus:
+                    del self.busses[k]
             
 
 class HiTrace(Trace):
@@ -80,6 +80,7 @@ class LoTrace(Trace):
         lopart = state&0x0F
         for bus in self.busses:
             bus.bus_write((bus.bus_read(verbose) & 0xF0)|lopart, verbose)
+
 
 # main
 if __name__ == "__main__":

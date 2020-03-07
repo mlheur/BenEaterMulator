@@ -61,6 +61,19 @@ class ToggleGate(OpenGate):
             if verbose: print("   [verbose] {0}.pulse: wrote [{1} state [{2}] to trace [{3}]".format(type(self).__name__, self.id, state, self.output))
         return(state)
 
+class HiLoOutputSplitter(ToggleGate):
+    def __init__(self, id, inbus, hi_outbus, lo_outbus, flags={}):
+        super().__init__(id, inbus, inbus, flags)
+        del self.output
+        self.hi_output = HiTrace('{}.hi_otrace'.format(self.id), hi_outbus)
+        self.lo_output = LoTrace('{}.lo_otrace'.format(self.id), lo_outbus)
+
+    def gate_write(self, state, verbose=False):
+        if verbose: print("   [verbose] {0}.gate_write: writing [{1}] state [{2}] to buses [{3},{4}]".format(type(self).__name__, self.id, state, self.hi_output, self.lo_output))
+        for output in [self.hi_output, self.lo_output]:
+            output.trace_write(state)
+
+
 # main
 if __name__ == "__main__":
     from bus import Bus
