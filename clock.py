@@ -15,7 +15,6 @@ class ClockMode(Enum):
 
 class Clock(OpenGate):
     def __init__(self, id, bus, flags={}, state={'Hz': 1}):
-        print("Clock Flags:[{}]".format(flags))
         flags.update({'hlt': False})
         self.state = {}
         self.state['last_tick_time'] = now()
@@ -24,11 +23,9 @@ class Clock(OpenGate):
             self.state['mode'] = state['mode']
         if "Hz" in state.keys():
             self.setspeed(state['Hz'])
-        print("Clock Flags:[{}]".format(flags))
         super().__init__(id, bus, bus, flags)
         del self.input
         del self.output
-        print(str(self))
 
     def __str__(self):
         return("{0},{1},{2},{3}".format(type(self).__name__, self.id, self.flags, self.state))
@@ -48,9 +45,10 @@ class Clock(OpenGate):
         if self.state['mode'].value:
             while now() - self.state['last_tick_time'] < self.state['delaytime']:
                 sleep(self.state['sleeptime'])
+        # ToDo: else state mode is manual, wait for user input...
         self.state['last_tick_time'] = now()
         if verbose: print("tick")
-        return not self.hlt()
+        return not self.hlt(None, verbose)
     
  
 if __name__ == "__main__":

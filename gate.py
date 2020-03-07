@@ -1,15 +1,12 @@
 #!/usr/bin/env python3      
 
-# portable system imports
 from sys import argv
 from os.path import abspath, realpath, dirname
 from site import addsitedir
 
-# local imports
 addsitedir(dirname(realpath(abspath(argv[0]))))
 from bus import Trace
 
-# exports
 class OpenGate(object):
     def __init__(self, id, inbus, outbus=None, flags={}):
         self.id = id
@@ -24,11 +21,14 @@ class OpenGate(object):
 
     def flag(self, f, state=None, verbose=False):
         if state is not None:
-            if not f in self.flags.keys(): self.flags[f] = None
+            if not f in self.flags: self.flags[f] = None
             if verbose: print("   [verbose] {0}.flag: changing [{1}] flag from [{2}] to [{3}]".format(type(self).__name__, self.id, f, self.flags[f], state))
             self.flags[f] = state
-        if verbose: print("   [verbose] {0}.flag: returning [{1}] flag as [{2}]".format(type(self).__name__, self.id, f, self.flags[f]))
-        return self.flags[f]
+        if f in self.flags:
+            if verbose: print("   [verbose] {0}.flag: returning [{1}] flag [{2}] as [{3}]".format(type(self).__name__, self.id, f, self.flags[f]))
+            return self.flags[f]
+        if verbose: print("   [verbose] {0}.flag: [{1}] lacks flag [{2}], forcing False".format(type(self).__name__, self.id, f))
+        return False
 
     def gate_read(self, verbose=False):
         state = self.input.trace_read()
@@ -74,7 +74,6 @@ class HiLoOutputSplitter(ToggleGate):
             output.trace_write(state)
 
 
-# main
 if __name__ == "__main__":
     from bus import Bus
     mb = Bus("the_bus", "8-Bit-Bus")

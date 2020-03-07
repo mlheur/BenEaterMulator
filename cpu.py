@@ -9,7 +9,7 @@ from site import addsitedir
 addsitedir(dirname(realpath(abspath(argv[0]))))
 
 from bus import Bus
-from clock import Clock
+from clock import Clock, ClockMode as CM
 from register import A_Register, B_Register, OUT_Register
 from decoder import BenEaterDecoder
 
@@ -21,10 +21,14 @@ class CPU(object):
         self.alu_a = Bus("alu_a")
         self.alu_b = Bus("alu_b")
         self.clk = Clock("clk", self.mainbus)
-        self.A = A_Register("A", self.mainbus, self.alu_a)
-        self.B = B_Register("B", self.mainbus, self.alu_b)
-        self.OUT = OUT_Register("OUT", self.mainbus)
         self.decoder = BenEaterDecoder(self)
+        self.components = []
+        self.A = A_Register("A", self.mainbus, self.alu_a)
+        self.components.append(self.A)
+        self.B = B_Register("B", self.mainbus, self.alu_b)
+        self.components.append(self.B)
+        self.OUT = OUT_Register("OUT", self.mainbus)
+        self.components.append(self.OUT)
 
     def __str__(self):
         return("CPU {}:\n  BUS=[{}]\n  A=[{}]\n  B=[{}]\n  CLK=[{}]".format(
@@ -35,29 +39,38 @@ class CPU(object):
             self.clk
         ))
 
-    def poweron(self, program=None, verbose=False):
-        if program is None:
-            program = [0]  # halt
-        print("Before Poweron\n{}".format(self))
-        while self.clk.getpulse(verbose):  # Wait for clock trigger
-            if len(program):
+    def poweron(self, program=None, mode=CM.RUN, verbose=False):
+        self.clk.hlt(False)
+        self.clk.state['mode'] = mode
+        if (program is None) or (len(program)==0):
+            program = [cpu.decoder.encode("HLT",0)]
+        if verbose: print("program: {}".format(program))
+        if verbose: print("Before Poweron\n{}".format(self))
+        while self.clk.getpulse(verbose):  # Wait for clock trigger, returns False on HLT
+            for instruction in program:
                 if verbose: print("fetch")
-                instruction = program.pop(0)
                 if verbose: print("decode")
                 self.decoder.decode(instruction, verbose)
                 if verbose: print("execute")
-                for component in [self.A, self.B]:
-                    component.pulse(verbose)
+                for component in self.components:
+                    if hasattr(component, "rising_edge"):
+                        component.rising_edge(verbose)
+                for component in self.components:
+                    if hasattr(component, "pulse"):
+                        component.pulse(verbose)
+                for component in self.components:
+                    if hasattr(component, "falling_edge"):
+                        component.falling_edge(verbose)
                 if verbose: print(self)
 
 # main
 if __name__ == "__main__":
     cpu = CPU("TheCPU")
     program = []
-    program.append(cpu.decoder.encode(0,1))
-    program.append(cpu.decoder.encode(7,3))
+    program.append(cpu.decoder.encode("NOP",1))
+    program.append(cpu.decoder.encode("LDI",3))
     program.append(cpu.decoder.encode(0,2))
-    program.append(cpu.decoder.encode(0xF,0))
-    program.append(cpu.decoder.encode(0,4))
-    cpu.poweron(program,True)
+    program.append(cpu.decoder.encode("HLT",0))
+    cpu.poweron(program,CM.RUN)
+    cpu.poweron([],CM.RUN,True)
 

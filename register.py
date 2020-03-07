@@ -17,6 +17,8 @@ class Register(ToggleGate):
         self.state = state
         flags.update({'ie': False})
         super().__init__(id, bus, bus, flags)
+    def __str__(self):
+        return("{},{}".format(super().__str__(), self.state))
     def ie(self, state=None, verbose=False):
         return self.flag('ie', state, verbose)
     def pulse(self, verbose=False):
@@ -25,27 +27,35 @@ class Register(ToggleGate):
         if self.oe():
             self.gate_write(self.state, verbose)
 
+
 class A_Register(Register):
     def __init__(self, id, bus, alu_a, state=None, flags={}):
         super().__init__(id, bus, state, flags)
         self.output.attach(alu_a)
+
 
 class B_Register(Register):
     def __init__(self, id, bus, alu_b, state=None, flags={}):
         super().__init__(id, bus, state, flags)
         self.output.detach(bus)
         self.output.attach(alu_b)
-        self.oe(True)
-    def oe(self, verbose=False):
+        del self.flags['oe']
+    def oe(self, state=None, verbose=False):
         return True
+
 
 class OUT_Register(Register):
     def __init__(self, id, bus, state=None):
         super().__init__(id, bus, state)
         self.output.detach(bus)
         del self.output
-    def oe(self, verbose=False):
-        return False
+    def pulse(self, verbose=False):
+        ostate = self.state
+        if self.ie():
+            self.state = self.gate_read(verbose)
+        if ostate != self.state:
+            print("OUT_Register output: {}".format(self.state))
+
 
 class INSTR_Register(Register):
     def __init__(self, id, bus, oprom_bus, state=None, flags={}):
@@ -53,6 +63,7 @@ class INSTR_Register(Register):
         self.output.detach(bus)
         del self.output
         self.output = HiLoOutputSplitter(id, bus, oprom_bus, bus, state, flags)
+
 
 class OPROM_Register(Register):
     def __init__(self, id, oprom_in, oprom_out, state=None, flags={}):

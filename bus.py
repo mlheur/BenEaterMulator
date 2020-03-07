@@ -24,7 +24,7 @@ class Bus(object):
         return(self.state)
     
     def bus_write(self, state, verbose=False):
-        if verbose: print("   [verbose] {0}.bus_write: changing [{1}] state from [{2}] to [{3}]".format(type(self).__name__, self.id, state, self.state))
+        if verbose: print("   [verbose] {0}.bus_write: changing [{1}] state from [{2}] to [{3}]".format(type(self).__name__, self.id, self.state, state))
         self.state = state
 
 
@@ -84,23 +84,30 @@ class LoTrace(Trace):
 
 # main
 if __name__ == "__main__":
+    print("  0 ")
     bus = Bus("the_bus", False)
-    print(bus, bus.bus_read(True))
+    print("  1 {} {}".format(bus, bus.bus_read(True)))
     bus.bus_write(True)
-    print(bus, bus.bus_read(True))
+    print("  2 {} {}".format(bus, bus.bus_read(True)))
 
     t = Trace("the_trace", bus)
+    print("  3 writing...")
     t.trace_write(0b10100101, True)
-    print(t, bus, bus.bus_read(True))
-    print("reading from trace: {}".format(t.trace_read()))
+    print("  4 {} {} {}".format(t, bus, bus.bus_read(True)))
+    print("  5 reading...")
+    print("  6 ... read from trace: {}".format(t.trace_read(True)))
 
+    print("  7 writing...")
     t.trace_write(0b11001010, True)
+    print("  8 ")
     lt = LoTrace("lo_trace", bus)
     ht = HiTrace("hi_trace", bus)
-    print(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True))
+    print("  9 {} {} {} {} {} {} {}".format(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True)))
 
+    print(" 10 writing...")
     lt.trace_write(0b0011, True)
-    print(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True))
+    print(" 11 {} {} {} {} {} {} {}".format(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True)))
 
+    print(" 12 writing...")
     ht.trace_write(0b0101, True)
-    print(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True))
+    print(" 13 {} {} {} {} {} {} {}".format(t, lt, ht, bus, bus.bus_read(True), lt.trace_read(True), ht.trace_read(True)))

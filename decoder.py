@@ -8,7 +8,7 @@ from site import addsitedir
 # local imports
 addsitedir(dirname(realpath(abspath(argv[0]))))
 from bus import Trace
-from register import OpenGate
+from register import Register
 
 # exports
 class BenEaterDecoder(Register):
