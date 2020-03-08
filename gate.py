@@ -39,9 +39,14 @@ class OpenGate(object):
         if verbose: print("   [verbose] {0}.gate_write: writing [{1}] state [{2}] to bus [{3}]".format(type(self).__name__, self.id, state, self.output))
         self.output.trace_write(state)
 
-    def pulse(self, verbose=False):
+    def rising_edge(self, verbose=False):
         state = self.gate_read(verbose)
         if verbose: print("   [verbose] {0}.pulse: reading [{1}] from trace [{2}] as [{3}]".format(type(self).__name__, self.id, self.input, state))
+    
+    def pulse(self, verbose=False):
+        pass
+
+    def falling_edge(self, verbose=False):
         self.gate_write(state, verbose)
         if verbose: print("   [verbose] {0}.pulse: wrote [{1} state [{2}] to trace [{3}]".format(type(self).__name__, self.id, state, self.output))
         return(state)
@@ -53,12 +58,13 @@ class ToggleGate(OpenGate):
         super().__init__(id, inbus, outbus, flags)
     def oe(self, state=None, verbose=False):
         return self.flag('oe', state, verbose)
-    def pulse(self, verbose=False):
+    def rising_edge(self, verbose=False):
         state = self.gate_read(verbose)
-        if verbose: print("   [verbose] {0}.pulse: reading [{1}] from trace [{2}] as [{3}]".format(type(self).__name__, self.id, self.input, state))
+        if verbose: print("   [verbose] {0}.rising_edge: reading [{1}] from trace [{2}] as [{3}]".format(type(self).__name__, self.id, self.input, state))
+    def falling_edge(self, verbose=False):
         if self.oe():
             self.gate_write(state, verbose)
-            if verbose: print("   [verbose] {0}.pulse: wrote [{1} state [{2}] to trace [{3}]".format(type(self).__name__, self.id, state, self.output))
+            if verbose: print("   [verbose] {0}.falling_edge: wrote [{1} state [{2}] to trace [{3}]".format(type(self).__name__, self.id, state, self.output))
         return(state)
 
 class HiLoOutputSplitter(ToggleGate):

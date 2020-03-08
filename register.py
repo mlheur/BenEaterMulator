@@ -21,9 +21,10 @@ class Register(ToggleGate):
         return("{},{}".format(super().__str__(), self.state))
     def ie(self, state=None, verbose=False):
         return self.flag('ie', state, verbose)
-    def pulse(self, verbose=False):
+    def rising_edge(self, verbose=False):
         if self.ie():
             self.state = self.gate_read(verbose)
+    def falling_edge(self, verbose=False):
         if self.oe():
             self.gate_write(self.state, verbose)
 
@@ -32,6 +33,13 @@ class A_Register(Register):
     def __init__(self, id, bus, alu_a, state=None, flags={}):
         super().__init__(id, bus, state, flags)
         self.output.attach(alu_a)
+    def rising_edge(self, verbose=False):
+        if self.ie():
+            self.state = self.gate_read(verbose)
+        if self.oe():
+            self.gate_write(self.state, verbose)
+    def falling_edge(self, verbose=False):
+        pass
 
 
 class B_Register(Register):
@@ -42,19 +50,28 @@ class B_Register(Register):
         del self.flags['oe']
     def oe(self, state=None, verbose=False):
         return True
+    def rising_edge(self, verbose=False):
+        if self.ie():
+            self.state = self.gate_read(verbose)
+        self.gate_write(self.state, verbose)
+    def falling_edge(self, verbose=False):
+        pass
 
 
 class OUT_Register(Register):
     def __init__(self, id, bus, state=None):
         super().__init__(id, bus, state)
         self.output.detach(bus)
-        del self.output
-    def pulse(self, verbose=False):
-        ostate = self.state
+        self.output = "SCREEN"
+        self.ostate = self.state
+    def rising_edge(self, verbose=False):
         if self.ie():
+            self.ostate = self.state
             self.state = self.gate_read(verbose)
-        if ostate != self.state:
+    def falling_edge(self, verbose=False):
+        if self.ostate != self.state:
             print("OUT_Register output: {}".format(self.state))
+            self.ostate = self.state
 
 
 class INSTR_Register(Register):
